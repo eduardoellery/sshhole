@@ -1,0 +1,6 @@
+FROM alpine:3.22
+RUN apk add --no-cache openssh-client sshpass bash
+COPY test.sh /test.sh
+COPY askpass.sh /askpass.sh
+RUN chmod +x /askpass.sh /test.sh
+ENTRYPOINT ["bash", "/test.sh"]

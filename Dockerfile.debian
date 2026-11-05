@@ -1,0 +1,16 @@
+# Controle negativo: OpenSSH sobre glibc, também sem PAM
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends openssh-server \
+ && rm -rf /var/lib/apt/lists/* && mkdir -p /run/sshd \
+ && useradd -m -s /bin/bash victim && usermod -p '*' victim \
+ && useradd -m -s /bin/bash alice && echo 'alice:Senha123!' | chpasswd \
+ && printf '%s\n' \
+      'UsePAM no' \
+      'PasswordAuthentication yes' \
+      'KbdInteractiveAuthentication no' \
+      'PermitRootLogin no' \
+      'LogLevel VERBOSE' > /etc/ssh/sshd_config.d/lab.conf
+
+EXPOSE 22
+CMD ["sh", "-c", "dpkg -s openssh-server | grep Version; exec /usr/sbin/sshd -D -e"]

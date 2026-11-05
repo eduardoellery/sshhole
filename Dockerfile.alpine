@@ -1,0 +1,33 @@
+# Alvo vulnerável: OpenSSH upstream compilado contra musl, SEM PAM.
+# Não usamos o apk openssh-server: Alpine corrigiu em openssh-10.0_p1-r11
+# ("main/openssh: fix password authentication", 2026-11-05) e o repo só serve a última revisão.
+ARG ALPINE_VERSION=3.22
+FROM alpine:${ALPINE_VERSION} AS build
+ARG OPENSSH_VERSION=10.0p1
+RUN apk add --no-cache build-base openssl-dev zlib-dev linux-headers
+# tarball baixado no host (sha256 021a2e709a0edf4250b1256bd5a9e500411a90dddabea830ed59cef90eb9d85c)
+ADD openssh-${OPENSSH_VERSION}.tar.gz /
+WORKDIR /openssh-${OPENSSH_VERSION}
+RUN ./configure --prefix=/usr --sysconfdir=/etc/ssh --libexecdir=/usr/lib/ssh \
+      --with-privsep-path=/var/empty --with-privsep-user=sshd --without-pam \
+ && make -j"$(nproc)" && make install DESTDIR=/out
+
+FROM alpine:${ALPINE_VERSION}
+RUN apk add --no-cache libcrypto3 zlib
+COPY --from=build /out/ /
+RUN (id sshd >/dev/null 2>&1 || adduser -S -H -h /var/empty -s /sbin/nologin sshd) \
+ && ssh-keygen -A \
+ # conta-alvo: campo de senha "*" (conta "travada" / key-only)
+ && adduser -D -s /bin/sh victim \
+ && sed -i 's/^victim:[^:]*:/victim:*:/' /etc/shadow \
+ # controle positivo: conta com senha real ($6$ — também fornece o salt de pick_salt())
+ && adduser -D -s /bin/sh alice \
+ && echo 'alice:Senha123!' | chpasswd -c sha512 \
+ && printf '%s\n' \
+      'PasswordAuthentication yes' \
+      'KbdInteractiveAuthentication no' \
+      'PermitRootLogin no' \
+      'LogLevel VERBOSE' >> /etc/ssh/sshd_config
+
+EXPOSE 22
+CMD ["sh", "-c", "/usr/sbin/sshd -V 2>&1; exec /usr/sbin/sshd -D -e"]

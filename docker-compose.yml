@@ -1,0 +1,17 @@
+# Rede interna isolada; portas só em 127.0.0.1
+services:
+  alpine-vuln:
+    build: { context: ., dockerfile: Dockerfile.alpine }
+    ports: ["127.0.0.1:2222:22"]
+    networks: [lab]
+  debian-ctrl:
+    build: { context: ., dockerfile: Dockerfile.debian }
+    ports: ["127.0.0.1:2223:22"]
+    networks: [lab]
+  tester:
+    build: { context: ., dockerfile: Dockerfile.tester }
+    depends_on: [alpine-vuln, debian-ctrl]
+    networks: [lab]
+    profiles: [test]
+networks:
+  lab: {}
