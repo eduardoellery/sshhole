@@ -119,3 +119,9 @@ concluir que "está corrigido".
 ## Escopo / ética
 Lab local, rede Docker interna, portas só em 127.0.0.1. Reprodução para estudo
 da vuln divulgada em sshhole.com. Não apontar contra hosts de terceiros.
+
+## Referências
+
+- [CVE-2026-123158 no NVD](https://nvd.nist.gov/vuln/detail/cve-2026-123158)
+- [The Hacker News: exploração da falha SSHole](https://thehackernews.com/2026/11/hackers-exploited-openssh-sshole-flaw.html)
+- [Vídeo sobre SSHole no YouTube](https://www.youtube.com/watch?v=kpev0vPC8TE)
